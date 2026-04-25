@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # GreenToken — Smart Cloud & AI Sustainability Dashboard
 
 A full-stack web application built with Flask + SQLite + Chart.js that:
@@ -139,3 +140,6 @@ Click the preset buttons in the UI to auto-fill these values.
 ---
 
 Built for BTech Computer Science — Sustainable Energy Project
+=======
+# Greentoken
+>>>>>>> d1b425b8854a509c55c3f0ad79e4e773099b948a
