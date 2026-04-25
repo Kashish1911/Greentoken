@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GreenToken — Smart Cloud & AI Sustainability Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <span class="logo-icon">◈</span>
+      <span class="logo-text">GreenToken</span>
+      <span class="logo-tag">v1.0</span>
+    </div>
+    <nav class="nav-tabs">
+      <button class="nav-btn active" data-tab="cloud">Cloud Cost</button>
+      <button class="nav-btn" data-tab="ai">AI Energy</button>
+      <button class="nav-btn" data-tab="history">History</button>
+    </nav>
+    <div class="header-badge">
+      <span class="pulse-dot"></span>
+      Sustainable AI
+    </div>
+  </div>
+</header>
+
+<!-- ══════════════ TAB: CLOUD COST ══════════════ -->
+<div id="tab-cloud" class="tab-panel active">
+
+  <section class="hero">
+    <div class="hero-label">CLOUD COST CALCULATOR</div>
+    <h1 class="hero-title">Calculate. Compare. <em>Save.</em></h1>
+    <p class="hero-sub">Real-time AWS · Azure · GCP pricing with carbon footprint analysis</p>
+  </section>
+
+  <main class="main-grid">
+
+    <!-- Input Form -->
+    <aside class="card card-input">
+      <div class="card-header">
+        <span class="card-num">01</span>
+        <span>Your Usage</span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Storage <span class="unit">GB / month</span></label>
+        <div class="input-wrap">
+          <input type="number" id="storage_gb" value="500" min="0" step="1" class="form-input">
+          <span class="input-icon">🗄</span>
+        </div>
+        <input type="range" id="storage_slider" min="0" max="10000" value="500" class="slider">
+        <div class="range-hint"><span>0 GB</span><span>10 TB</span></div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Compute <span class="unit">hours / month</span></label>
+        <div class="input-wrap">
+          <input type="number" id="compute_hours" value="200" min="0" step="1" class="form-input">
+          <span class="input-icon">⚙</span>
+        </div>
+        <input type="range" id="compute_slider" min="0" max="720" value="200" class="slider">
+        <div class="range-hint"><span>0h</span><span>720h</span></div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Data Transfer <span class="unit">GB / month</span></label>
+        <div class="input-wrap">
+          <input type="number" id="transfer_gb" value="100" min="0" step="1" class="form-input">
+          <span class="input-icon">⇅</span>
+        </div>
+        <input type="range" id="transfer_slider" min="0" max="5000" value="100" class="slider">
+        <div class="range-hint"><span>0 GB</span><span>5 TB</span></div>
+      </div>
+
+      <button id="calc-btn" class="btn-calc">
+        <span class="btn-text">Calculate Now</span>
+        <span class="btn-arrow">→</span>
+      </button>
+
+      <div class="sample-btns">
+        <div class="sample-label">Quick presets:</div>
+        <button class="sample-btn" onclick="loadPreset('startup')">Startup</button>
+        <button class="sample-btn" onclick="loadPreset('smb')">SMB</button>
+        <button class="sample-btn" onclick="loadPreset('enterprise')">Enterprise</button>
+      </div>
+    </aside>
+
+    <!-- Results Panel -->
+    <div class="results-area" id="results-area">
+
+      <!-- Placeholder state -->
+      <div class="placeholder-state" id="placeholder-state">
+        <div class="placeholder-icon">◎</div>
+        <div class="placeholder-text">Enter your usage and click Calculate</div>
+      </div>
+
+      <!-- Results (hidden until calc) -->
+      <div id="results-content" style="display:none">
+
+        <!-- Winner Banner -->
+        <div class="winner-banner" id="winner-banner">
+          <div class="winner-label">CHEAPEST PROVIDER</div>
+          <div class="winner-name" id="winner-name">—</div>
+          <div class="winner-price" id="winner-price">$0.00 / mo</div>
+          <div class="winner-save" id="winner-save"></div>
+        </div>
+
+        <!-- Cost Cards -->
+        <div class="cost-cards">
+          <div class="cost-card" id="card-aws">
+            <div class="provider-logo aws-logo">AWS</div>
+            <div class="cost-total" id="aws-total">$0.00</div>
+            <div class="cost-sub">per month</div>
+            <div class="cost-breakdown" id="aws-breakdown"></div>
+          </div>
+          <div class="cost-card" id="card-azure">
+            <div class="provider-logo azure-logo">Azure</div>
+            <div class="cost-total" id="azure-total">$0.00</div>
+            <div class="cost-sub">per month</div>
+            <div class="cost-breakdown" id="azure-breakdown"></div>
+          </div>
+          <div class="cost-card" id="card-gcp">
+            <div class="provider-logo gcp-logo">GCP</div>
+            <div class="cost-total" id="gcp-total">$0.00</div>
+            <div class="cost-sub">per month</div>
+            <div class="cost-breakdown" id="gcp-breakdown"></div>
+          </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-row">
+          <div class="chart-card">
+            <div class="chart-title">Total Cost Comparison</div>
+            <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Cost Breakdown by Category</div>
+            <div class="chart-wrap"><canvas id="breakdownChart"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Cost Breakdown Table -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-num">02</span>
+            <span>Detailed Cost Breakdown</span>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table" id="breakdown-table">
+              <thead>
+                <tr>
+                  <th>Provider</th>
+                  <th>Storage</th>
+                  <th>Compute</th>
+                  <th>Transfer</th>
+                  <th>Total / mo</th>
+                  <th>Total / yr</th>
+                  <th>Carbon (kg CO₂)</th>
+                </tr>
+              </thead>
+              <tbody id="table-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Recommendation Box -->
+        <div class="recommendation-box" id="recommendation-box">
+          <div class="rec-header">
+            <span class="rec-icon">⚡</span>
+            <span>Smart Recommendations</span>
+          </div>
+          <div class="rec-grid" id="rec-grid"></div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Sustainable AI Tips -->
+  <section class="tips-section">
+    <div class="tips-header">
+      <div class="tips-label">SUSTAINABLE AI TIPS</div>
+      <h2 class="tips-title">Reduce Your Cloud Carbon Footprint</h2>
+    </div>
+    <div class="tips-grid">
+      <div class="tip-card">
+        <div class="tip-icon">🌱</div>
+        <div class="tip-num">01</div>
+        <h3>Choose Green Regions</h3>
+        <p>GCP Iowa (us-central1) and AWS Oregon (us-west-2) run on near-100% renewable energy. Moving workloads there can cut carbon by up to 88%.</p>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">🔋</div>
+        <div class="tip-num">02</div>
+        <h3>Right-size Instances</h3>
+        <p>Over-provisioned compute is the #1 cloud waste driver. Use auto-scaling and spot/preemptible instances to cut idle compute by 60-70%.</p>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">📦</div>
+        <div class="tip-num">03</div>
+        <h3>Optimize Data Transfer</h3>
+        <p>Egress costs are often hidden. Use CDNs, compress data before transfer, and keep workloads in the same region to minimize both cost and energy.</p>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">🤖</div>
+        <div class="tip-num">04</div>
+        <h3>Use Smaller AI Models</h3>
+        <p>A fine-tuned 7B model can match GPT-4 on domain tasks at 1/14th the energy cost. Choose the smallest model that meets your accuracy requirement.</p>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">⏱</div>
+        <div class="tip-num">05</div>
+        <h3>Batch AI Requests</h3>
+        <p>Batching 100 requests together uses ~3× less energy per request than sending them individually due to GPU utilization and overhead amortization.</p>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">🗜</div>
+        <div class="tip-num">06</div>
+        <h3>Compress & Cache</h3>
+        <p>Cache AI responses for repeated queries. Enable storage compression (up to 4:1 ratio for logs). Use lifecycle policies to auto-archive cold data to cheaper, greener tiers.</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- ══════════════ TAB: AI ENERGY ══════════════ -->
+<div id="tab-ai" class="tab-panel">
+
+  <section class="hero">
+    <div class="hero-label">AI ENERGY ANALYZER</div>
+    <h1 class="hero-title">How much energy does <em>your AI</em> use?</h1>
+    <p class="hero-sub">Study AI energy consumption and find the most efficient model for your workload</p>
+  </section>
+
+  <main class="main-grid ai-grid">
+    <aside class="card card-input">
+      <div class="card-header">
+        <span class="card-num">01</span>
+        <span>AI Usage Profile</span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Daily Tokens <span class="unit">tokens / day</span></label>
+        <div class="input-wrap">
+          <input type="number" id="tokens_per_day" value="100000" min="1000" step="1000" class="form-input">
+          <span class="input-icon">🔤</span>
+        </div>
+        <input type="range" id="tokens_slider" min="1000" max="10000000" value="100000" class="slider">
+        <div class="range-hint"><span>1K</span><span>10M</span></div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">AI Model</label>
+        <select id="ai_model" class="form-input form-select">
+          <option>GPT-4</option>
+          <option selected>GPT-3.5</option>
+          <option>Claude 3 Opus</option>
+          <option>Claude 3 Haiku</option>
+          <option>Llama 3 8B</option>
+          <option>Llama 3 70B</option>
+          <option>Mistral 7B</option>
+          <option>Gemini Ultra</option>
+          <option>Gemini Flash</option>
+        </select>
+      </div>
+
+      <button id="ai-calc-btn" class="btn-calc">
+        <span class="btn-text">Analyze Energy</span>
+        <span class="btn-arrow">⚡</span>
+      </button>
+    </aside>
+
+    <div class="results-area" id="ai-results-area">
+      <div class="placeholder-state" id="ai-placeholder">
+        <div class="placeholder-icon">⚡</div>
+        <div class="placeholder-text">Select a model and click Analyze Energy</div>
+      </div>
+
+      <div id="ai-results-content" style="display:none">
+
+        <!-- Energy Stats Row -->
+        <div class="energy-stats" id="energy-stats"></div>
+
+        <!-- Model Comparison Table -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-num">02</span>
+            <span>Model Energy Comparison</span>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Model</th>
+                  <th>Parameters</th>
+                  <th>kWh / year</th>
+                  <th>Efficiency</th>
+                  <th>vs Your Model</th>
+                </tr>
+              </thead>
+              <tbody id="ai-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- AI Energy Chart -->
+        <div class="chart-card">
+          <div class="chart-title">Annual Energy Consumption by Model (kWh)</div>
+          <div class="chart-wrap" style="height:320px"><canvas id="aiEnergyChart"></canvas></div>
+        </div>
+
+        <!-- Token Optimization Tips -->
+        <div class="optimization-box">
+          <div class="opt-header">
+            <span class="opt-icon">🎯</span>
+            <span>Token Optimization Strategies</span>
+          </div>
+          <div class="opt-grid">
+            <div class="opt-item">
+              <div class="opt-title">Prompt Compression</div>
+              <div class="opt-desc">Remove filler words, use abbreviations in system prompts. Average 30-40% token reduction possible without quality loss.</div>
+              <div class="opt-saving">~35% fewer tokens</div>
+            </div>
+            <div class="opt-item">
+              <div class="opt-title">Response Caching</div>
+              <div class="opt-desc">Cache identical or near-identical queries. In enterprise settings, 15-40% of queries are repetitive and can be served from cache.</div>
+              <div class="opt-saving">~25% cost reduction</div>
+            </div>
+            <div class="opt-item">
+              <div class="opt-title">Model Cascading</div>
+              <div class="opt-desc">Route simple queries to small models (7B), complex ones to large models. 70-80% of queries are typically simple.</div>
+              <div class="opt-saving">~60% energy saving</div>
+            </div>
+            <div class="opt-item">
+              <div class="opt-title">Streaming & Early Stop</div>
+              <div class="opt-desc">Use max_tokens limits. Set temperature=0 for deterministic tasks. Avoid regenerating when partial results satisfy the need.</div>
+              <div class="opt-saving">~20% token saving</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ══════════════ TAB: HISTORY ══════════════ -->
+<div id="tab-history" class="tab-panel">
+  <section class="hero">
+    <div class="hero-label">CALCULATION HISTORY</div>
+    <h1 class="hero-title">Your past <em>calculations</em></h1>
+    <p class="hero-sub">Last 10 cloud cost calculations stored in SQLite database</p>
+  </section>
+  <main style="max-width:1100px;margin:0 auto;padding:0 2rem 4rem">
+    <div class="card">
+      <div class="card-header" style="justify-content:space-between;display:flex;align-items:center">
+        <div style="display:flex;align-items:center;gap:.75rem">
+          <span class="card-num">DB</span>
+          <span>SQLite Records</span>
+        </div>
+        <button class="btn-refresh" onclick="loadHistory()">↻ Refresh</button>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Date</th>
+              <th>Storage (GB)</th>
+              <th>Compute (hr)</th>
+              <th>Transfer (GB)</th>
+              <th>AWS ($)</th>
+              <th>Azure ($)</th>
+              <th>GCP ($)</th>
+              <th>Cheapest</th>
+              <th>Carbon (kg)</th>
+            </tr>
+          </thead>
+          <tbody id="history-body">
+            <tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--muted)">Loading history…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-left">
+      <span class="logo-icon">◈</span> GreenToken — Smart Cloud & AI Sustainability Dashboard
+    </div>
+    <div class="footer-right">
+      Built with Flask · SQLite · Chart.js · Love for the Planet 🌍
+    </div>
+  </div>
+</footer>
+
+<script src="/static/js/main.js"></script>
+</body>
+</html>
